@@ -1,3 +1,6 @@
 node_modules/
 .env
+bot.log
+locations.json
+pending-replies.json
 data/

@@ -7,5 +7,5 @@ FROM node:18-alpine
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY ISSBot.js .
-USER node
+RUN mkdir -p /app/data
 CMD ["node", "ISSBot.js", "start-bot"]
