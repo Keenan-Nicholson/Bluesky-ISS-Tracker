@@ -161,16 +161,15 @@ const buildReplyPost = (locationName, sighting, type) => {
 
 const buildVisiblePost = (locationName, date, sightings) => {
   const count = sightings.length;
-  const header =
-    count > 1
-      ? `🛰️ ISS: ${locationName} — ${date} (${count})`
-      : `🛰️ ISS: ${locationName} — ${date}`;
+  const header = count > 1
+    ? `${locationName} — ${date} (${count})`
+    : `${locationName} — ${date}`;
 
   const stripAbove = (s) => s.replace(" above ", " ");
 
   const lines = sightings.map(
     (s, i) =>
-      `${count > 1 ? `${i + 1}. ` : ""}${s.time} ✦ ${s.duration} ✦ Max ${s.degree} ✦ ↑${stripAbove(s.appears)} ✦ ↓${stripAbove(s.disappears)}`,
+      `${count > 1 ? `${i + 1}. ` : ""}${s.time} ✦ ${s.duration} ✦ ${s.degree} ✦ ↑${stripAbove(s.appears)} ✦ ↓${stripAbove(s.disappears)}`,
   );
 
   return `${header}\n${lines.join("\n")}\n\n${HASHTAGS}`;
