@@ -8,4 +8,4 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY ISSBot.js .
 RUN mkdir -p /app/data
-CMD ["node", "ISSBot.js", "start-bot"]
+CMD ["node", "ISSBot.js", "start-bot", "--post"]

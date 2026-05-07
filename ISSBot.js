@@ -380,7 +380,7 @@ const job = async () => {
 const COMMANDS = {
   "start-bot": async () => {
     log(`Starting bot on cron schedule ${CRON_SCHEDULE}`);
-    await job();
+    if (argv["post"]) await job();
     cron.schedule(CRON_SCHEDULE, job);
     cron.schedule(REPLY_CRON, checkPendingReplies);
     await checkPendingReplies();
