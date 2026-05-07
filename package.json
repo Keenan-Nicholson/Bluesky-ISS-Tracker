@@ -7,8 +7,6 @@
     "start": "npm run start-bot",
     "start-bot": "node ISSBot.js start-bot",
     "run-job": "node ISSBot.js run-job",
-    "write-locations": "node ISSBot.js write-locations",
-    "read-locations": "node ISSBot.js read-locations",
     "print-locations": "node ISSBot.js print-locations",
     "dry-run": "node ISSBot.js run-job --dry-run",
     "test-reply": "node ISSBot.js test-reply --dry-run"

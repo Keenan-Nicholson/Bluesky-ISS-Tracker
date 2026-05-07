@@ -95,14 +95,6 @@ const getLocations = async () =>
     ),
   );
 
-const readLocations = async () => {
-  try {
-    return JSON.parse(await fs.readFile("locations.json", "utf-8"));
-  } catch {
-    return {};
-  }
-};
-
 const writeLocations = async (locations) =>
   fs.writeFile("locations.json", JSON.stringify(locations, null, 2));
 
@@ -401,8 +393,6 @@ const COMMANDS = {
     }
     await writePendingReplies([]);
   },
-  "write-locations": async () => writeLocations(await getLocations()),
-  "read-locations": async () => log(JSON.stringify(await readLocations())),
   "print-locations": async () => log(JSON.stringify(await getLocations())),
 };
 
