@@ -372,7 +372,7 @@ const job = async () => {
     }
     const result = await postUpdate(data, name, tomorrow);
     results.push(result);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
   }
 
   const newReplies = results.filter((r) => r);
