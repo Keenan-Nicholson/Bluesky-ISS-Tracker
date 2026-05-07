@@ -22,8 +22,7 @@ const CRON_SCHEDULE = "0 12 * * *";
 const REPLY_CRON = "*/10 * * * *";
 const PENDING_REPLIES_FILE = `${DATA_DIR}/pending-replies.json`;
 const NASA_S3_URL = "https://iss-sts.hqmce.nasa.gov/iss-sts-cities-html/";
-const HASHTAGS =
-  "#StJohns #CornerBrook #GFW #GooseBay #BaieVerte #HantsHarbour #TroutRiver #HVGB #Labrador #Newfoundland #nlwx #NFLD #explorenl #NASA #ISS #SpaceStation #Astronomy, #nightsky #lookup";
+const HASHTAGS = "#Newfoundland #Labrador #NASA #ISS";
 
 let agent;
 
@@ -97,7 +96,10 @@ const getLocations = async () =>
   );
 
 const writeLocations = async (locations) =>
-  fs.writeFile(`${DATA_DIR}/locations.json`, JSON.stringify(locations, null, 2));
+  fs.writeFile(
+    `${DATA_DIR}/locations.json`,
+    JSON.stringify(locations, null, 2),
+  );
 
 const formatDate = (date) => {
   const formatted = date.toDateString().slice(4, 10);
@@ -160,14 +162,17 @@ const buildReplyPost = (locationName, sighting, type) => {
 const buildVisiblePost = (locationName, date, sightings) => {
   const count = sightings.length;
   const header = count > 1
-    ? `🛰️ ISS SIGHTINGS: ${locationName} — ${date} (${count} passes)`
-    : `🛰️ ISS SIGHTING: ${locationName} — ${date}`;
+    ? `🛰️ ISS: ${locationName} — ${date} (${count})`
+    : `🛰️ ISS: ${locationName} — ${date}`;
+
+  const stripAbove = (s) => s.replace(" above ", " ");
 
   const lines = sightings.map(
-    (s, i) => `${i + 1}. ${s.time} — ${s.duration} — ${s.degree} — ${s.appears} → ${s.disappears}`,
+    (s, i) =>
+      `${count > 1 ? `${i + 1}. ` : ""}${s.time} ✦ ${s.duration} ✦ Max ${s.degree} ✦ ↑${stripAbove(s.appears)} ✦ ↓${stripAbove(s.disappears)}`,
   );
 
-  return `${header}\n\n${lines.join("\n")}\n\n${HASHTAGS}`;
+  return `${header}\n${lines.join("\n")}\n\n${HASHTAGS}`;
 };
 
 const postToBluesky = async (text, replyTo = null) => {
@@ -229,7 +234,9 @@ const postUpdate = async (locationData, locationName, tomorrow) => {
         disappears: "10° above NE",
       },
     ];
-    log(`${locationName}: no sightings on NASA page, using seed data (dry-run)`);
+    log(
+      `${locationName}: no sightings on NASA page, using seed data (dry-run)`,
+    );
   }
 
   const matches = locationData.filter((data) => extractDate(data) === tomorrow);
@@ -239,9 +246,17 @@ const postUpdate = async (locationData, locationName, tomorrow) => {
       ...parseSighting(d),
       sentAlerts: [],
     }));
-    const result = await postToBluesky(buildVisiblePost(locationName, tomorrow, sightings));
+    const result = await postToBluesky(
+      buildVisiblePost(locationName, tomorrow, sightings),
+    );
     if (result?.uri) {
-      return { uri: result.uri, cid: result.cid, locationName, tomorrowDate: tomorrow, sightings };
+      return {
+        uri: result.uri,
+        cid: result.cid,
+        locationName,
+        tomorrowDate: tomorrow,
+        sightings,
+      };
     }
     return null;
   }
@@ -251,10 +266,20 @@ const postUpdate = async (locationData, locationName, tomorrow) => {
     if (first) {
       const date = extractDate(first);
       const sighting = { ...parseSighting(first), sentAlerts: [] };
-      log(`${locationName}: no data for tomorrow, using "${date}" instead (dry-run)`);
-      const result = await postToBluesky(buildVisiblePost(locationName, date, [sighting]));
+      log(
+        `${locationName}: no data for tomorrow, using "${date}" instead (dry-run)`,
+      );
+      const result = await postToBluesky(
+        buildVisiblePost(locationName, date, [sighting]),
+      );
       if (result?.uri) {
-        return { uri: result.uri, cid: result.cid, locationName, tomorrowDate: date, sightings: [sighting] };
+        return {
+          uri: result.uri,
+          cid: result.cid,
+          locationName,
+          tomorrowDate: date,
+          sightings: [sighting],
+        };
       }
     }
   }
@@ -297,9 +322,14 @@ const checkPendingReplies = async () => {
       for (const alert of ALERTS) {
         if (sighting.sentAlerts.includes(alert.key)) continue;
         const [start, end] = alert.window;
-        if (nlMinutes >= sightingMinutes + start && nlMinutes <= sightingMinutes + end) {
+        if (
+          nlMinutes >= sightingMinutes + start &&
+          nlMinutes <= sightingMinutes + end
+        ) {
           const text = buildReplyPost(reply.locationName, sighting, alert.key);
-          log(`Reply to ${reply.locationName} (${sighting.time}, ${alert.label})`);
+          log(
+            `Reply to ${reply.locationName} (${sighting.time}, ${alert.label})`,
+          );
           await postToBluesky(text, { uri: reply.uri, cid: reply.cid });
           sighting.sentAlerts.push(alert.key);
         }
@@ -374,7 +404,15 @@ const COMMANDS = {
         locationName: "Test Location",
         tomorrowDate: getNewfoundlandDate(),
         sightings: [
-          { time: timeStr, duration: "4 min", degree: "12°", appears: "12° above SSW", disappears: "10° above NE", direction: "above SSW", sentAlerts: [] },
+          {
+            time: timeStr,
+            duration: "4 min",
+            degree: "12°",
+            appears: "12° above SSW",
+            disappears: "10° above NE",
+            direction: "above SSW",
+            sentAlerts: [],
+          },
         ],
       },
     ]);
