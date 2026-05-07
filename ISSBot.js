@@ -161,9 +161,10 @@ const buildReplyPost = (locationName, sighting, type) => {
 
 const buildVisiblePost = (locationName, date, sightings) => {
   const count = sightings.length;
-  const header = count > 1
-    ? `🛰️ ISS: ${locationName} — ${date} (${count})`
-    : `🛰️ ISS: ${locationName} — ${date}`;
+  const header =
+    count > 1
+      ? `🛰️ ISS: ${locationName} — ${date} (${count})`
+      : `🛰️ ISS: ${locationName} — ${date}`;
 
   const stripAbove = (s) => s.replace(" above ", " ");
 
