@@ -1,0 +1,5 @@
+node_modules/
+.env
+locations.json
+pending-replies.json
+bot.log
