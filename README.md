@@ -44,25 +44,31 @@ Use an [App Password](https://bsky.app/settings/app-passwords), not your main pa
 
 ## Docker
 
-```bash
-docker compose up -d --build
-```
-
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/engine/install/) & [Docker Compose](https://docs.docker.com/compose/install/) v2+
 - `.env` file in project root (see [Setup](#setup))
 
-### Commands
+### Profiles
+
+Two Compose services are defined — one with and one without the immediate `--post` on start:
+
+| Command | Service | Starts | Immediate post? |
+|---|---|---|---|
+| `docker compose up -d --build` | `bot` | Cron only | No |
+| `docker compose --profile post up -d --build` | `bot-post` | Cron + fetch & post | Yes |
+
+Use the `post` profile when you want the bot to immediately fetch and post today's sightings on startup (e.g. first deploy or after a long downtime). Without it, the bot only runs on its noon daily cron.
+
+### Common commands
 
 | Command | Description |
 |---|---|
-| `docker compose up -d --build` | Build and start in background (runs `start-bot --post`) |
+| `docker compose up -d --build` | Build and start as daemon (cron only) |
+| `docker compose --profile post up -d --build` | Build and start with immediate post |
 | `docker compose down` | Stop the container |
 | `docker compose logs -f` | Tail live logs |
 | `docker compose logs --tail=100` | View last 100 log lines |
-
-The container runs `start-bot --post`, so it fetches and posts on startup then continues on the cron schedule. Without the `--post` flag, the bot only runs on its cron schedule (noon daily) without an immediate post.
 
 The container mounts `./data:/app/data`, so runtime files (`bot.log`, `locations.json`, `pending-replies.json`) persist on the host. A health check (`pgrep` on the bot process) reports status to monitoring tools like Beszel.
 
