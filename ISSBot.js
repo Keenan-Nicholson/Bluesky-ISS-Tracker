@@ -307,19 +307,23 @@ const checkPendingReplies = async () => {
 
   const nlMinutes = getNewfoundlandMinutes();
   const nlDate = getNewfoundlandDate();
+  log(`NL time: ${nlDate} ${Math.floor(nlMinutes / 60)}:${String(nlMinutes % 60).padStart(2, "0")}`);
   const remaining = [];
 
   for (const reply of pending) {
     if (nlDate !== reply.tomorrowDate) {
+      log(`  ${reply.locationName}: date mismatch (nl="${nlDate}" != stored="${reply.tomorrowDate}"), keeping`);
       remaining.push(reply);
       continue;
     }
 
+    log(`  ${reply.locationName}: date matches, checking ${reply.sightings.length} sighting(s)`);
     let hasActive = false;
 
     for (const sighting of reply.sightings) {
       const sightingMinutes = timeToMinutes(sighting.time);
       if (sightingMinutes === null) {
+        log(`    ${sighting.time}: could not parse time, keeping active`);
         hasActive = true;
         continue;
       }
@@ -329,10 +333,10 @@ const checkPendingReplies = async () => {
       for (const alert of ALERTS) {
         if (sighting.sentAlerts.includes(alert.key)) continue;
         const [start, end] = alert.window;
-        if (
-          nlMinutes >= sightingMinutes + start &&
-          nlMinutes <= sightingMinutes + end
-        ) {
+        const windowStart = sightingMinutes + start;
+        const windowEnd = sightingMinutes + end;
+        log(`    ${sighting.time}: checking ${alert.key} window [${windowStart}, ${windowEnd}], current=${nlMinutes}`);
+        if (nlMinutes >= windowStart && nlMinutes <= windowEnd) {
           const text = buildReplyPost(reply.locationName, sighting, alert.key);
           log(
             `Reply to ${reply.locationName} (${sighting.time}, ${alert.label})`,
@@ -343,13 +347,22 @@ const checkPendingReplies = async () => {
       }
 
       if (sighting.sentAlerts.length < 3 && nlMinutes <= sightingMinutes + 15) {
+        log(`    ${sighting.time}: ${3 - sighting.sentAlerts.length} alert(s) remaining, keeping active`);
         hasActive = true;
+      } else {
+        log(`    ${sighting.time}: expired (${sighting.sentAlerts.length}/3 alerts sent)`);
       }
     }
 
-    if (hasActive) remaining.push(reply);
+    if (hasActive) {
+      log(`  ${reply.locationName}: keeping in queue`);
+      remaining.push(reply);
+    } else {
+      log(`  ${reply.locationName}: removing from queue`);
+    }
   }
 
+  log(`Saving ${remaining.length} remaining reply(s)`);
   await writePendingReplies(remaining);
 };
 
