@@ -17,8 +17,6 @@ const log = async (message, type = "INFO") => {
 dotenv.config();
 const argv = minimist(process.argv.slice(2));
 const DRY_RUN = argv["dry-run"] ?? false;
-if (process.env.POST_ON_START === "true") argv["post"] = true;
-
 const CRON_SCHEDULE = "0 12 * * *";
 const REPLY_CRON = "*/10 * * * *";
 const PENDING_REPLIES_FILE = `${DATA_DIR}/pending-replies.json`;
@@ -94,12 +92,6 @@ const getLocations = async () =>
         await getLocation(city),
       ]),
     ),
-  );
-
-const writeLocations = async (locations) =>
-  fs.writeFile(
-    `${DATA_DIR}/locations.json`,
-    JSON.stringify(locations, null, 2),
   );
 
 const formatDate = (date) => {
@@ -312,40 +304,44 @@ const dayDiff = (dateA, dateB) => {
   return Math.round((b - a) / 86400000);
 };
 
+let lastDetailLogDate = null;
+
 const checkPendingReplies = async () => {
   const pending = await readPendingReplies();
-  if (pending.length === 0) {
-    log("No pending replies to check");
-    return;
-  }
-  log(`Checking ${pending.length} pending reply(s)`);
+  if (pending.length === 0) return;
 
   const nlMinutes = getNewfoundlandMinutes();
   const nlDate = getNewfoundlandDate();
-  log(`NL time: ${nlDate} ${Math.floor(nlMinutes / 60)}:${String(nlMinutes % 60).padStart(2, "0")}`);
+  const logDetails = nlDate !== lastDetailLogDate;
+  if (logDetails) lastDetailLogDate = nlDate;
+
+  if (logDetails) {
+    log(`Checking ${pending.length} pending reply(s) — ${nlDate} ${Math.floor(nlMinutes / 60)}:${String(nlMinutes % 60).padStart(2, "0")}`);
+  }
+
   const remaining = [];
 
   for (const reply of pending) {
     const diff = dayDiff(nlDate, reply.tomorrowDate);
 
     if (diff < 0) {
-      log(`  ${reply.locationName}: expired (${reply.tomorrowDate}), dropping`);
+      log(`${reply.locationName}: expired (${reply.tomorrowDate}), dropping`);
       continue;
     }
 
     if (diff > 1) {
-      log(`  ${reply.locationName}: too early (nl=${nlDate}, stored=${reply.tomorrowDate}), keeping`);
+      if (logDetails) log(`${reply.locationName}: too early (nl=${nlDate}, stored=${reply.tomorrowDate}), keeping`);
       remaining.push(reply);
       continue;
     }
 
-    log(`  ${reply.locationName}: processing (dayDiff=${diff}), ${reply.sightings.length} sighting(s)`);
+    if (logDetails) log(`${reply.locationName}: processing (dayDiff=${diff}), ${reply.sightings.length} sighting(s)`);
     let hasActive = false;
+    let postedCount = 0;
 
     for (const sighting of reply.sightings) {
       const sightingMinutes = timeToMinutes(sighting.time);
       if (sightingMinutes === null) {
-        log(`    ${sighting.time}: could not parse time, keeping active`);
         hasActive = true;
         continue;
       }
@@ -356,34 +352,31 @@ const checkPendingReplies = async () => {
       for (const alert of ALERTS) {
         if (sighting.sentAlerts.includes(alert.key)) continue;
         const [start, end] = alert.window;
-        const windowStart = adjustedMinutes + start;
-        const windowEnd = adjustedMinutes + end;
-        log(`    ${sighting.time}: checking ${alert.key} window [${windowStart}, ${windowEnd}], current=${nlMinutes}`);
-        if (nlMinutes >= windowStart && nlMinutes <= windowEnd) {
+        if (nlMinutes >= adjustedMinutes + start && nlMinutes <= adjustedMinutes + end) {
           const text = buildReplyPost(reply.locationName, sighting, alert.key);
           log(`Reply to ${reply.locationName} (${sighting.time}, ${alert.label})`);
           await postToBluesky(text, { uri: reply.uri, cid: reply.cid });
           sighting.sentAlerts.push(alert.key);
+          postedCount++;
         }
       }
 
       if (sighting.sentAlerts.length < 3 && nlMinutes <= adjustedMinutes + 15) {
-        log(`    ${sighting.time}: ${3 - sighting.sentAlerts.length} alert(s) remaining, keeping active`);
         hasActive = true;
-      } else {
-        log(`    ${sighting.time}: expired (${sighting.sentAlerts.length}/3 alerts sent)`);
       }
     }
 
-    if (hasActive) {
-      log(`  ${reply.locationName}: keeping in queue`);
-      remaining.push(reply);
-    } else {
-      log(`  ${reply.locationName}: removing from queue`);
+    if (postedCount > 0 && !hasActive) {
+      log(`${reply.locationName}: all alerts sent, removing from queue`);
     }
+
+    if (hasActive) remaining.push(reply);
   }
 
-  log(`Saving ${remaining.length} remaining reply(s)`);
+  if (remaining.length !== pending.length && !logDetails) {
+    log(`${remaining.length} of ${pending.length} pending reply(s) remaining`);
+  }
+
   await writePendingReplies(remaining);
 };
 
@@ -416,19 +409,17 @@ const job = async () => {
     log(`Saved ${newReplies.length} pending reply(s)`);
   }
 
-  await writeLocations(locations);
   log("Job complete");
 };
 
 const COMMANDS = {
   "start-bot": async () => {
     const flags = [
-      argv["post"] && "--post",
       DRY_RUN && "--dry-run",
       process.env.POST_ON_START === "true" && "POST_ON_START",
     ].filter(Boolean).join(", ");
     log(`Starting bot (cron: ${CRON_SCHEDULE}, flags: ${flags || "none"})`);
-    if (argv["post"]) await job();
+    if (process.env.POST_ON_START === "true") await job();
     cron.schedule(CRON_SCHEDULE, job);
     cron.schedule(REPLY_CRON, checkPendingReplies);
     await checkPendingReplies();

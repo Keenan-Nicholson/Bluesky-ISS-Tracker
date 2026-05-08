@@ -40,7 +40,7 @@ Use an [App Password](https://bsky.app/settings/app-passwords), not your main pa
 | Command                       | Description                                              |
 | ----------------------------- | -------------------------------------------------------- |
 | `npm start`                   | Start persistent bot (cron only, no immediate post)      |
-| `npm run start-bot -- --post` | Start persistent bot with immediate fetch-and-post cycle |
+| `npm start` (with `POST_ON_START=true` in `.env`) | Start bot; posts immediately, then daily at noon |
 | `npm run run-job`             | Run one fetch-and-post cycle immediately                 |
 | `npm run dry-run`             | Run one cycle without posting (logs what would be sent)  |
 | `npm run test-reply`          | Test the reply system with a fake sighting 55 min out    |
@@ -72,7 +72,7 @@ POST_ON_START=true
 | `docker compose logs -f`         | Tail live logs            |
 | `docker compose logs --tail=100` | View last 100 log lines   |
 
-The container mounts `./data:/app/data`, so runtime files (`bot.log`, `locations.json`, `pending-replies.json`) persist on the host. A health check (`pgrep` on the bot process) reports status to monitoring tools like Beszel.
+The container mounts `./data:/app/data`, so runtime files (`bot.log`, `pending-replies.json`) persist on the host. A health check (`pgrep` on the bot process) reports status to monitoring tools like Beszel.
 
 ## Architecture
 
@@ -85,7 +85,6 @@ The container mounts `./data:/app/data`, so runtime files (`bot.log`, `locations
 
 | File                        | Purpose                         | Git     |
 | --------------------------- | ------------------------------- | ------- |
-| `data/locations.json`       | Cached sighting data from NASA  | Ignored |
 | `data/pending-replies.json` | Queue of scheduled reply alerts | Ignored |
 | `data/bot.log`              | Timestamped activity log        | Ignored |
 | `.env`                      | Bluesky credentials             | Ignored |
