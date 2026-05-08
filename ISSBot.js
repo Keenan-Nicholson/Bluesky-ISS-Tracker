@@ -143,7 +143,10 @@ const getNewfoundlandDate = () => {
 const readPendingReplies = async () => {
   try {
     return JSON.parse(await fs.readFile(PENDING_REPLIES_FILE, "utf-8"));
-  } catch {
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      log(`Failed to parse ${PENDING_REPLIES_FILE}: ${error.message}`, "WARN");
+    }
     return [];
   }
 };
@@ -200,7 +203,9 @@ const postToBluesky = async (text, replyTo = null) => {
       : { uri: "dry-run-uri", cid: "dry-run-cid" };
   }
   try {
-    return await agent.post(post);
+    const result = await agent.post(post);
+    log(`Posted: ${result.uri}`);
+    return result;
   } catch (error) {
     log(`Failed to post: ${error.message}`, "ERROR");
     return null;
@@ -244,6 +249,7 @@ const postUpdate = async (locationData, locationName, tomorrow) => {
   }
 
   const matches = locationData.filter((data) => extractDate(data) === tomorrow);
+  log(`${locationName}: ${matches.length} sighting(s) for ${tomorrow}`);
 
   if (matches.length > 0) {
     const sightings = matches.map((d) => ({
@@ -411,11 +417,17 @@ const job = async () => {
   }
 
   await writeLocations(locations);
+  log("Job complete");
 };
 
 const COMMANDS = {
   "start-bot": async () => {
-    log(`Starting bot on cron schedule ${CRON_SCHEDULE}`);
+    const flags = [
+      argv["post"] && "--post",
+      DRY_RUN && "--dry-run",
+      process.env.POST_ON_START === "true" && "POST_ON_START",
+    ].filter(Boolean).join(", ");
+    log(`Starting bot (cron: ${CRON_SCHEDULE}, flags: ${flags || "none"})`);
     if (argv["post"]) await job();
     cron.schedule(CRON_SCHEDULE, job);
     cron.schedule(REPLY_CRON, checkPendingReplies);
