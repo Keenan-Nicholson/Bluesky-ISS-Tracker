@@ -119,7 +119,7 @@ const getNewfoundlandMinutes = () => {
     hour12: false,
   });
   const [hours, minutes] = formatter.format(now).split(":").map(Number);
-  return hours * 60 + minutes;
+  return (hours % 24) * 60 + minutes;
 };
 
 const getNewfoundlandDate = () => {
