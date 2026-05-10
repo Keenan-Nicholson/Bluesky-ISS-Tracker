@@ -152,7 +152,7 @@ const buildReplyPost = (locationName, sighting, type) => {
   const msgs = {
     "1hr": `🛰️ The #ISS passes over ${locationName} in about 1 hour (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
     "30min": `🛰️ The #ISS passes over ${locationName} in about 30 minutes (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
-    now: `🛰️ The #ISS is now passing over ${locationName}!\n\nIt is appearing ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
+    now: `🛰️ The #ISS is now passing over ${locationName}!\n\nIt's appearing ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
   };
   return msgs[type] || msgs.now;
 };
