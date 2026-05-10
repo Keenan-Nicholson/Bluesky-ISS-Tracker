@@ -146,11 +146,13 @@ const readPendingReplies = async () => {
 const writePendingReplies = async (replies) =>
   fs.writeFile(PENDING_REPLIES_FILE, JSON.stringify(replies, null, 2));
 
+const stripAbove = (s) => s.replace(" above ", " ");
+
 const buildReplyPost = (locationName, sighting, type) => {
   const msgs = {
-    "1hr": `🛰️ The #ISS will be visible from ${locationName} in about 1 hour (${sighting.time})!\n\nLook ${sighting.direction} at ${sighting.degree} elevation.\n\n${HASHTAGS}`,
-    "30min": `🛰️ The #ISS will be visible from ${locationName} in about 30 minutes (${sighting.time})!\n\nLook ${sighting.direction} at ${sighting.degree} elevation.\n\n${HASHTAGS}`,
-    now: `🛰️ The #ISS is now visible from ${locationName}! Look ${sighting.direction} at ${sighting.degree} elevation.\n\n${HASHTAGS}`,
+    "1hr": `🛰️ The #ISS will be visible from ${locationName} in about 1 hour (${sighting.time})!\n\n↑${stripAbove(sighting.appears)} ✦ peak ${sighting.degree} ✦ ↓${stripAbove(sighting.disappears)}\n\n${HASHTAGS}`,
+    "30min": `🛰️ The #ISS will be visible from ${locationName} in about 30 minutes (${sighting.time})!\n\n↑${stripAbove(sighting.appears)} ✦ peak ${sighting.degree} ✦ ↓${stripAbove(sighting.disappears)}\n\n${HASHTAGS}`,
+    now: `🛰️ The #ISS is now visible from ${locationName}!\n\n↑${stripAbove(sighting.appears)} ✦ peak ${sighting.degree} ✦ ↓${stripAbove(sighting.disappears)}\n\n${HASHTAGS}`,
   };
   return msgs[type] || msgs.now;
 };
@@ -158,8 +160,6 @@ const buildReplyPost = (locationName, sighting, type) => {
 const buildVisiblePost = (locationName, date, sightings) => {
   const count = sightings.length;
   const header = `${locationName} — ${date}`;
-
-  const stripAbove = (s) => s.replace(" above ", " ");
 
   const lines = sightings.map(
     (s, i) =>
