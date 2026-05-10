@@ -171,8 +171,14 @@ const buildVisiblePost = (locationName, date, sightings) => {
 
 const postToBluesky = async (text, replyTo = null) => {
   if (!agent) {
-    log("Bluesky disabled, not actually posting");
-    return null;
+    if (process.env.ISS_BOT_BLUESKY_HANDLE) {
+      log("Agent unavailable, attempting re-initialization...");
+      await initBluesky();
+    }
+    if (!agent) {
+      log("Bluesky disabled, not actually posting");
+      return null;
+    }
   }
   log(`Post: ${text}`);
   const rt = new RichText({ text });
