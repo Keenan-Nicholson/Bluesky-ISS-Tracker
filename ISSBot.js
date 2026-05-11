@@ -22,6 +22,9 @@ const REPLY_CRON = "*/10 * * * *";
 const PENDING_REPLIES_FILE = `${DATA_DIR}/pending-replies.json`;
 const NASA_S3_URL = "https://iss-sts.hqmce.nasa.gov/iss-sts-cities-html/";
 const HASHTAGS = "#Newfoundland #Labrador #ISS";
+const HASHTAGS_1HR = "#Newfoundland #Labrador #nlwx #ISS";
+const HASHTAGS_30MIN = (loc) => `#ExploreNL #${loc.replace(/[.\s]+/g, "")} #lookup`;
+const HASHTAGS_NOW = "#ISS #Astronomy #Stargazing";
 
 let agent;
 
@@ -150,9 +153,9 @@ const stripAbove = (s) => s.replace(" above ", " ");
 
 const buildReplyPost = (locationName, sighting, type) => {
   const msgs = {
-    "1hr": `🛰️ The #ISS passes over ${locationName} in about 1 hour (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
-    "30min": `🛰️ The #ISS passes over ${locationName} in about 30 minutes (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
-    now: `🛰️ The #ISS is now passing over ${locationName}!\n\nIt's appearing ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS}`,
+    "1hr": `🛰️ The #ISS passes over ${locationName} in about 1 hour (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS_1HR}`,
+    "30min": `🛰️ The #ISS passes over ${locationName} in about 30 minutes (${sighting.time})!\n\nIt will appear ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS_30MIN(locationName)}`,
+    now: `🛰️ The #ISS is now passing over ${locationName}!\n\nIt's appearing ${sighting.appears}, reaching a peak elevation of ${sighting.degree} before disappearing ${sighting.disappears}.\n\n${HASHTAGS_NOW}`,
   };
   return msgs[type] || msgs.now;
 };
